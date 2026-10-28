@@ -1,93 +1,51 @@
-
 #include "Sorting.h"
 
-// ------------------------------------
-// 1. SELECTION SORT BY BURST TIME
-// ------------------------------------
-void selectionSortByBurst(const ProcessTable& pt,
-                          int indices[], int n) {
-    for (int i = 0; i < n - 1; i++) {
-        int minIndex = i;
-
-        for (int j = i + 1; j < n; j++) {
-            int currentBurst =
-                pt.getProcess(indices[j]).burst_time;
-
-            int minBurst =
-                pt.getProcess(indices[minIndex]).burst_time;
-
-            if (currentBurst < minBurst) {
-                minIndex = j;
+// 1. selection sort by burst time
+void selectionSortByBurst(const ProcessTable& pt,int idx[],int n){
+    for(int i=0;i<n-1;i++){
+        int minIdx=i;
+        for(int j=i+1;j<n;j++){
+            if(pt.getProcess(idx[j]).bt < pt.getProcess(idx[minIdx]).bt){
+                minIdx=j;
             }
         }
-
-        int temp = indices[i];
-        indices[i] = indices[minIndex];
-        indices[minIndex] = temp;
+        int t=idx[i]; idx[i]=idx[minIdx]; idx[minIdx]=t;
     }
 }
 
-// ------------------------------------
-// 2. QUICK SORT BY PRIORITY
-// Lower number = higher priority
-// ------------------------------------
-int partitionByPriority(const ProcessTable& pt,
-                        int indices[], int low, int high) {
-    int pivotPriority =
-        pt.getProcess(indices[high]).priority;
-
-    int i = low - 1;
-
-    for (int j = low; j < high; j++) {
-        if (pt.getProcess(indices[j]).priority <= pivotPriority) {
+// partition for quick sort by priority
+int partitionByPriority(const ProcessTable& pt,int idx[],int low,int high){
+    int pivotPrio=pt.getProcess(idx[high]).prio;
+    int i=low-1;
+    for(int j=low;j<high;j++){
+        if(pt.getProcess(idx[j]).prio <= pivotPrio){
             i++;
-
-            int temp = indices[i];
-            indices[i] = indices[j];
-            indices[j] = temp;
+            int t=idx[i]; idx[i]=idx[j]; idx[j]=t;
         }
     }
-
-    int temp = indices[i + 1];
-    indices[i + 1] = indices[high];
-    indices[high] = temp;
-
-    return i + 1;
+    int t=idx[i+1]; idx[i+1]=idx[high]; idx[high]=t;
+    return i+1;
 }
 
-void quickSortByPriority(const ProcessTable& pt,
-                         int indices[], int low, int high) {
-    if (low < high) {
-        int pivot = partitionByPriority(pt, indices, low, high);
-
-        quickSortByPriority(pt, indices, low, pivot - 1);
-        quickSortByPriority(pt, indices, pivot + 1, high);
+// 2. quick sort by priority (lower number = higher priority)
+void quickSortByPriority(const ProcessTable& pt,int idx[],int low,int high){
+    if(low<high){
+        int p=partitionByPriority(pt,idx,low,high);
+        quickSortByPriority(pt,idx,low,p-1);
+        quickSortByPriority(pt,idx,p+1,high);
     }
 }
 
-// ------------------------------------
-// 3. BUBBLE SORT BY PID
-// ------------------------------------
-void bubbleSortByPID(const ProcessTable& pt,
-                     int indices[], int n) {
-    for (int i = 0; i < n - 1; i++) {
-        bool swapped = false;
-
-        for (int j = 0; j < n - i - 1; j++) {
-            int pid1 = pt.getProcess(indices[j]).pid;
-            int pid2 = pt.getProcess(indices[j + 1]).pid;
-
-            if (pid1 > pid2) {
-                int temp = indices[j];
-                indices[j] = indices[j + 1];
-                indices[j + 1] = temp;
-
-                swapped = true;
+// 3. bubble sort by PID
+void bubbleSortByPID(const ProcessTable& pt,int idx[],int n){
+    for(int i=0;i<n-1;i++){
+        bool swapped=false;
+        for(int j=0;j<n-i-1;j++){
+            if(pt.getProcess(idx[j]).pid > pt.getProcess(idx[j+1]).pid){
+                int t=idx[j]; idx[j]=idx[j+1]; idx[j+1]=t;
+                swapped=true;
             }
         }
-
-        if (!swapped) {
-            break;
-        }
+        if(!swapped) break;
     }
 }

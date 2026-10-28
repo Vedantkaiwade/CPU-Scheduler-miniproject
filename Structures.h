@@ -1,185 +1,117 @@
-
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
 #include <iostream>
+#include <string>
 using namespace std;
 
-// ==================================================
-// 1. CIRCULAR SINGLY LINKED LIST
-// Used for Round Robin ready queue
-// ==================================================
-
-struct CircularNode {
-    int processIndex;
+// 1. circular singly linked list for Round Robin
+struct CircularNode{
+    int index;
     CircularNode* next;
-
-    CircularNode(int index);
+    CircularNode(int i):index(i),next(nullptr){}
 };
 
-class CircularLinkedList {
+class CircularQueue{
 private:
     CircularNode* tail;
-    int count;
-
 public:
-    CircularLinkedList();
-    ~CircularLinkedList();
-
-    bool isEmpty() const;
-    int getCount() const;
-
-    void enqueue(int processIndex);
+    CircularQueue():tail(nullptr){}
+    ~CircularQueue();
+    bool isEmpty() const { return tail==nullptr; }
+    void enqueue(int idx);
     int dequeue();
-    void display() const;
 };
 
-
-// ==================================================
-// 2. DEQUE
-// Used for process admission queue
-// ==================================================
-
-struct DequeNode {
-    int processIndex;
+// 2. deque for admission and urgent processes
+struct DequeNode{
+    int index;
     DequeNode* next;
     DequeNode* prev;
-
-    DequeNode(int index);
+    DequeNode(int i):index(i),next(nullptr),prev(nullptr){}
 };
 
-class ProcessDeque {
+class ProcessDeque{
 private:
     DequeNode* front;
     DequeNode* rear;
-    int count;
-
 public:
-    ProcessDeque();
+    ProcessDeque():front(nullptr),rear(nullptr){}
     ~ProcessDeque();
-
-    bool isEmpty() const;
-    int getCount() const;
-
-    void addFront(int processIndex);
-    void addRear(int processIndex);
-
+    bool isEmpty() const { return front==nullptr; }
+    void addFront(int idx);
+    void addRear(int idx);
     int removeFront();
-    int removeRear();
-
     void display() const;
 };
 
-
-// ==================================================
-// 3. STACK
-// Used for undo log
-// ==================================================
-
-struct StackNode {
-    int processIndex;
+// 3. stack for undo log
+struct StackNode{
+    int index;
     StackNode* next;
-
-    StackNode(int index);
+    StackNode(int i):index(i),next(nullptr){}
 };
 
-class UndoStack {
+class UndoStack{
 private:
-    StackNode* topNode;
-    int count;
-
+    StackNode* top;
 public:
-    UndoStack();
+    UndoStack():top(nullptr){}
     ~UndoStack();
-
-    bool isEmpty() const;
-    int getCount() const;
-
-    void push(int processIndex);
+    bool isEmpty() const { return top==nullptr; }
+    void push(int idx);
     int pop();
-    int peek() const;
-
-    void display() const;
 };
 
+// 4. binary search tree for process directory
+struct BSTNode{
+    int pid;
+    BSTNode* left;
+    BSTNode* right;
+    BSTNode(int id):pid(id),left(nullptr),right(nullptr){}
+};
 
-// ==================================================
-// 4. DOUBLY LINKED LIST
-// Used for scheduling run history
-// ==================================================
+class ProcessBST{
+private:
+    BSTNode* root;
+    BSTNode* insertNode(BSTNode* node,int pid);
+    bool searchNode(BSTNode* node,int pid) const;
+    void inorder(BSTNode* node) const;
+    void destroy(BSTNode* node);
+public:
+    ProcessBST():root(nullptr){}
+    ~ProcessBST(){ destroy(root); }
+    void insert(int pid){ root=insertNode(root,pid); }
+    bool search(int pid) const { return searchNode(root,pid); }
+    void displayInorder() const { inorder(root); cout<<"\n"; }
+};
 
-struct HistoryNode {
-    int runId;
-    HistoryNode* next;
+// 5. doubly linked list for run history
+struct HistoryNode{
+    string policy;
+    double avgWT;
+    double avgTAT;
+    string gantt;
     HistoryNode* prev;
-
-    HistoryNode(int id);
+    HistoryNode* next;
+    HistoryNode(string p,double wt,double tat,string g)
+        :policy(p),avgWT(wt),avgTAT(tat),gantt(g),prev(nullptr),next(nullptr){}
 };
 
-class RunHistory {
+class RunHistory{
 private:
     HistoryNode* head;
     HistoryNode* tail;
     HistoryNode* current;
-    int count;
-
 public:
-    RunHistory();
+    RunHistory():head(nullptr),tail(nullptr),current(nullptr){}
     ~RunHistory();
-
-    bool isEmpty() const;
-    int getCount() const;
-
-    // Add a new run to history
-    void addRun(int runId);
-
-    // Navigate history
-    int moveBackward();
-    int moveForward();
-
-    // Get current run without moving
-    int getCurrentRun() const;
-
-    void display() const;
-};
-
-
-// ==================================================
-// 5. BINARY SEARCH TREE
-// Used for process directory
-// ==================================================
-
-struct TreeNode {
-    int processId;
-    TreeNode* left;
-    TreeNode* right;
-
-    TreeNode(int id);
-};
-
-class ProcessBST {
-private:
-    TreeNode* root;
-
-    TreeNode* insertNode(TreeNode* node, int processId);
-    bool searchNode(TreeNode* node, int processId) const;
-
-    void inorderTraversal(TreeNode* node) const;
-    void preorderTraversal(TreeNode* node) const;
-    void postorderTraversal(TreeNode* node) const;
-
-    void deleteTree(TreeNode* node);
-
-public:
-    ProcessBST();
-    ~ProcessBST();
-
-    void insert(int processId);
-    bool search(int processId) const;
-
-    void displayInorder() const;
-    void displayPreorder() const;
-    void displayPostorder() const;
+    bool isEmpty() const { return head==nullptr; }
+    void addRun(string policy,double avgWT,double avgTAT,string gantt);
+    bool movePrev();
+    bool moveNext();
+    void displayCurrent() const;
+    void displayAll() const;
 };
 
 #endif

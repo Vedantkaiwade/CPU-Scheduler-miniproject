@@ -1,56 +1,43 @@
-
 #ifndef PROCESS_H
 #define PROCESS_H
 
 #include <iostream>
 using namespace std;
 
-struct Process {
+// process structure
+struct Process{
     int pid;
-    int arrival_time;
-    int burst_time;
-    int priority;
-    int remaining_time;
-
-    int completion_time;
-    int waiting_time;
-    int turnaround_time;
+    int at;
+    int bt;
+    int prio;
+    int remaining;
+    int ct;
+    int wt;
+    int tat;
 };
 
-class ProcessTable {
+// process table using array and hash table
+class ProcessTable{
 private:
-    Process* table;
+    static const int MAX=50;
+    Process pro[MAX];
     int count;
-    int capacity;
+    int hashTable[101];
 
-    int* hashTable;
-    int hashTableSize;
-
-    int hashFunction(int pid) const;
-    void hashInsert(int pid, int index);
+    int hashFunc(int pid) const;
 
 public:
-    explicit ProcessTable(int cap);
-    ~ProcessTable();
-
-    ProcessTable(const ProcessTable&) = delete;
-    ProcessTable& operator=(const ProcessTable&) = delete;
-
-    bool addProcess(int pid, int arrival_time,
-                    int burst_time, int priority);
-
+    ProcessTable();
+    bool addProcess(int pid,int at,int bt,int prio);
+    bool removeLast();
     int getCount() const;
-
     Process& getProcess(int index);
     const Process& getProcess(int index) const;
-    
-    const Process* getProcessArray() const;
 
-    int linearSearchByPID(int pid) const;
-    int binarySearchByPID(int pid) const;
-    int hashSearchByPID(int pid) const;
-
-    void displayAll() const;
+    int linearSearch(int pid) const;
+    int binarySearch(int pid) const;
+    int hashSearch(int pid) const;
+    void display() const;
 };
 
 #endif

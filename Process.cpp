@@ -1,192 +1,103 @@
+#include "Process.h"
 
-#include "process.h"
-#include <stdexcept>
-
-// Constructor
-ProcessTable::ProcessTable(int cap) {
-    capacity = (cap > 0) ? cap : 0;
-    count = 0;
-
-    table = (capacity > 0) ? new Process[capacity] : nullptr;
-
-    hashTableSize = (capacity * 2) + 1;
-    hashTable = new int[hashTableSize];
-
-    for (int i = 0; i < hashTableSize; i++) {
-        hashTable[i] = -1;
-    }
+// initialize table and hash table
+ProcessTable::ProcessTable(){
+    count=0;
+    for(int i=0;i<101;i++) hashTable[i]=-1;
 }
 
-// Destructor
-ProcessTable::~ProcessTable() {
-    delete[] table;
-    delete[] hashTable;
+// hash function based on PID
+int ProcessTable::hashFunc(int pid) const{
+    return pid%101;
 }
 
-// Hash function
-int ProcessTable::hashFunction(int pid) const {
-    return pid % hashTableSize;
-}
+// add process and insert into hash table with linear probing
+bool ProcessTable::addProcess(int pid,int at,int bt,int prio){
+    if(count>=MAX||pid<0||at<0||bt<=0) return false;
+    if(hashSearch(pid)!=-1) return false;
 
-// Insert PID into hash table using linear probing
-void ProcessTable::hashInsert(int pid, int index) {
-    int slot = hashFunction(pid);
-    int probes = 0;
+    pro[count]={pid,at,bt,prio,bt,0,0,0};
 
-    while (hashTable[slot] != -1 && probes < hashTableSize) {
-        slot = (slot + 1) % hashTableSize;
-        probes++;
-    }
+    int slot=hashFunc(pid);
+    while(hashTable[slot]!=-1) slot=(slot+1)%101;
+    hashTable[slot]=count;
 
-    if (probes < hashTableSize) {
-        hashTable[slot] = index;
-    }
-}
-
-// Add a process
-bool ProcessTable::addProcess(int pid, int arrival_time,
-                              int burst_time, int priority) {
-    if (count >= capacity)
-        return false;
-
-    if (pid < 0 || arrival_time < 0 || burst_time <= 0)
-        return false;
-
-    if (hashSearchByPID(pid) != -1)
-        return false;
-
-    table[count].pid = pid;
-    table[count].arrival_time = arrival_time;
-    table[count].burst_time = burst_time;
-    table[count].priority = priority;
-
-    table[count].remaining_time = burst_time;
-    table[count].completion_time = 0;
-    table[count].waiting_time = 0;
-    table[count].turnaround_time = 0;
-
-    hashInsert(pid, count);
     count++;
-
     return true;
 }
 
-// Get number of processes
-int ProcessTable::getCount() const {
+// remove last process (for undo stack)
+bool ProcessTable::removeLast(){
+    if(count==0) return false;
+    count--;
+    for(int i=0;i<101;i++) hashTable[i]=-1;
+    for(int i=0;i<count;i++){
+        int slot=hashFunc(pro[i].pid);
+        while(hashTable[slot]!=-1) slot=(slot+1)%101;
+        hashTable[slot]=i;
+    }
+    return true;
+}
+
+int ProcessTable::getCount() const{
     return count;
 }
 
-// Get process by index
-Process& ProcessTable::getProcess(int index) {
-    if (index < 0 || index >= count) {
-        throw out_of_range("Invalid process index");
-    }
-
-    return table[index];
+Process& ProcessTable::getProcess(int index){
+    return pro[index];
 }
 
-const Process& ProcessTable::getProcess(int index) const {
-    if (index < 0 || index >= count) {
-        throw out_of_range("Invalid process index");
-    }
-
-    return table[index];
+const Process& ProcessTable::getProcess(int index) const{
+    return pro[index];
 }
 
-// Get the process array
-const Process* ProcessTable::getProcessArray() const {
-    return table;
-}
-
-// Linear search
-int ProcessTable::linearSearchByPID(int pid) const {
-    for (int i = 0; i < count; i++) {
-        if (table[i].pid == pid) {
-            return i;
-        }
+// linear search
+int ProcessTable::linearSearch(int pid) const{
+    for(int i=0;i<count;i++){
+        if(pro[i].pid==pid) return i;
     }
-
     return -1;
 }
 
-// Binary search
-int ProcessTable::binarySearchByPID(int pid) const {
-    int* sortedIndex = new int[count];
-
-    for (int i = 0; i < count; i++) {
-        sortedIndex[i] = i;
-    }
-
-    // Sort indices by PID, leaving the original table unchanged
-    for (int i = 1; i < count; i++) {
-        int key = sortedIndex[i];
-        int j = i - 1;
-
-        while (j >= 0 &&
-               table[sortedIndex[j]].pid > table[key].pid) {
-            sortedIndex[j + 1] = sortedIndex[j];
-            j--;
-        }
-
-        sortedIndex[j + 1] = key;
-    }
-
-    int low = 0;
-    int high = count - 1;
-    int result = -1;
-
-    while (low <= high) {
-        int mid = low + (high - low) / 2;
-        int index = sortedIndex[mid];
-
-        if (table[index].pid == pid) {
-            result = index;
-            break;
-        }
-        else if (table[index].pid < pid) {
-            low = mid + 1;
-        }
-        else {
-            high = mid - 1;
+// binary search on sorted indices
+int ProcessTable::binarySearch(int pid) const{
+    int idx[MAX];
+    for(int i=0;i<count;i++) idx[i]=i;
+    for(int i=0;i<count-1;i++){
+        for(int j=0;j<count-i-1;j++){
+            if(pro[idx[j]].pid>pro[idx[j+1]].pid){
+                int t=idx[j]; idx[j]=idx[j+1]; idx[j+1]=t;
+            }
         }
     }
-
-    delete[] sortedIndex;
-    return result;
+    int low=0,high=count-1;
+    while(low<=high){
+        int mid=(low+high)/2;
+        if(pro[idx[mid]].pid==pid) return idx[mid];
+        if(pro[idx[mid]].pid<pid) low=mid+1;
+        else high=mid-1;
+    }
+    return -1;
 }
 
-// Hash search
-int ProcessTable::hashSearchByPID(int pid) const {
-    if (pid < 0)
-        return -1;
-
-    int slot = hashFunction(pid);
-    int probes = 0;
-
-    while (probes < hashTableSize) {
-        int index = hashTable[slot];
-
-        if (index == -1)
-            return -1;
-
-        if (table[index].pid == pid)
-            return index;
-
-        slot = (slot + 1) % hashTableSize;
+// hash search with linear probing
+int ProcessTable::hashSearch(int pid) const{
+    if(pid<0) return -1;
+    int slot=hashFunc(pid);
+    int probes=0;
+    while(hashTable[slot]!=-1&&probes<101){
+        int idx=hashTable[slot];
+        if(pro[idx].pid==pid) return idx;
+        slot=(slot+1)%101;
         probes++;
     }
-
     return -1;
 }
 
-// Display all processes
-void ProcessTable::displayAll() const {
-    cout << "\nPID\tArrival\tBurst\tPriority\n";
-
-    for (int i = 0; i < count; i++) {
-        cout << table[i].pid << "\t"
-             << table[i].arrival_time << "\t"
-             << table[i].burst_time << "\t"
-             << table[i].priority << "\n";
+// display all processes
+void ProcessTable::display() const{
+    cout<<"\nPID\tArrival\tBurst\tPriority\n";
+    for(int i=0;i<count;i++){
+        cout<<pro[i].pid<<"\t"<<pro[i].at<<"\t"<<pro[i].bt<<"\t"<<pro[i].prio<<"\n";
     }
 }
